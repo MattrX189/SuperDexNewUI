@@ -150,7 +150,7 @@ private struct ScannedCodeSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(AppBackground())
             .navigationTitle("Scanned Code")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)

@@ -48,7 +48,7 @@ struct MeetingHistoryView: View {
             .padding(.trailing, 20)
             .padding(.bottom, 20)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .sheet(isPresented: $showingAddMeeting) {
             AddMeetingView { newMeeting in
                 // In a real app, you'd save this to your data model

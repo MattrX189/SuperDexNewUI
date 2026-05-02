@@ -15,8 +15,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            AppBackground()
 
             Image("Splash")
                 .resizable()

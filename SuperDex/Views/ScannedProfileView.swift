@@ -42,7 +42,7 @@ struct ScannedProfileView: View {
                     Spacer(minLength: 24)
                 }
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(AppBackground())
             .navigationTitle("Scanned Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)

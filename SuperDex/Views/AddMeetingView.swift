@@ -31,6 +31,8 @@ struct AddMeetingView: View {
                         .frame(minHeight: 120)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppBackground())
             .navigationTitle("Add Meeting")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

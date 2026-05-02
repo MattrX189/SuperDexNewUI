@@ -54,6 +54,7 @@ struct HomeView: View {
                     .padding(.trailing, 24)
                     .padding(.bottom, 24)
             }
+            .background(AppBackground())
             .navigationBarHidden(true)
             .navigationDestination(item: $viewModel.selectedGroup) { group in
                 GroupDetailView(group: group, selectedProfile: $viewModel.selectedProfile)
@@ -89,7 +90,7 @@ struct HomeView: View {
                     Text("Hello")
                         .font(.gilroy(.bold, size: 42))
                         .foregroundStyle(.white)
-                    Text("Gaurang!")
+                    Text("\(greetingName)!")
                         .font(.gilroy(.bold, size: 42))
                         .foregroundStyle(.white)
                 }
@@ -111,7 +112,8 @@ struct HomeView: View {
 
     private var greetingName: String {
         let trimmed = userProfile.name.trimmingCharacters(in: .whitespaces)
-        return trimmed.isEmpty ? "Emily" : trimmed.split(separator: " ").first.map(String.init) ?? trimmed
+        guard !trimmed.isEmpty else { return "there" }
+        return trimmed.split(separator: " ").first.map(String.init) ?? trimmed
     }
 
     // MARK: - Search

@@ -84,7 +84,7 @@ struct ProfileDetailView: View {
 
     private var backgroundLayer: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            AppBackground(showTopGlow: false)
 
             RadialGradient(
                 colors: [

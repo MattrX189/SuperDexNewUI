@@ -52,7 +52,7 @@ struct UserProfileView: View {
                         .padding(.bottom, 32)
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(AppBackground())
             .navigationBarHidden(true)
             .navigationDestination(item: $selectedProfile) { profile in
                 ProfileDetailView(profile: profile)

@@ -67,7 +67,7 @@ struct ContactsView: View {
                 } action: { _, pulled in
                     pullStretch = pulled
                 }
-                .background(Color.black.ignoresSafeArea())
+                .background(AppBackground())
 
                 if isSelecting && !selectedIds.isEmpty {
                     addToGroupBar
