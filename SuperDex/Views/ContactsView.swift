@@ -13,6 +13,10 @@ struct ContactsView: View {
     @State private var showAddToGroup: Bool = false
     @Namespace private var contactNamespace
 
+    // How far the user has pulled past the top edge (0 when not overscrolling).
+    // Drives the deck-fan physics on the stacked rows.
+    @State private var pullStretch: CGFloat = 0
+
     private var contacts: [Contact] { viewModel.contacts }
 
     var body: some View {
@@ -30,13 +34,19 @@ struct ContactsView: View {
                                 .padding(.top, 80)
                         } else {
                             LazyVStack(spacing: -40) {
-                                ForEach(contacts) { contact in
+                                ForEach(Array(contacts.enumerated()), id: \.element.id) { index, contact in
                                     ContactRow(
                                         contact: contact.asProfileCard,
                                         isSelecting: isSelecting,
                                         isSelected: selectedIds.contains(contact.id)
                                     )
                                     .matchedTransitionSource(id: contact.id, in: contactNamespace)
+                                    .modifier(
+                                        StackedDeckPhysics(
+                                            index: index,
+                                            stretch: pullStretch
+                                        )
+                                    )
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         if isSelecting {
@@ -51,6 +61,11 @@ struct ContactsView: View {
                             .padding(.bottom, isSelecting && !selectedIds.isEmpty ? 96 : 16)
                         }
                     }
+                }
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    max(0, -(geometry.contentOffset.y + geometry.contentInsets.top))
+                } action: { _, pulled in
+                    pullStretch = pulled
                 }
                 .background(Color.black.ignoresSafeArea())
 
@@ -172,6 +187,42 @@ struct ContactsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 40)
+    }
+}
+
+// MARK: - Stacked Deck Physics
+
+/// Spreads the stacked card deck on top-overscroll. Each card's spring response
+/// is staggered by index so the deck cascades back into a stack on release.
+private struct StackedDeckPhysics: ViewModifier {
+    let index: Int
+    let stretch: CGFloat
+
+    // Saturating cap so the deck never fans wider than the original overlap —
+    // cards always stay visually adjacent, no empty bands between them.
+    private static let maxExtraGap: CGFloat = 32
+    private static let stretchSoftness: CGFloat = 120
+
+    func body(content: Content) -> some View {
+        let depth = CGFloat(index)
+        // Normalized 0…1 pull progress with an ease-out asymptote.
+        let progress = min(stretch / Self.stretchSoftness, 1)
+        // Each card drops further than the one above, but never past maxExtraGap.
+        let extraGap = Self.maxExtraGap * progress
+        let offsetY = depth * extraGap
+        // Subtle scale up while the deck is fanned.
+        let scale = 1 + 0.03 * progress
+
+        content
+            .offset(y: offsetY)
+            .scaleEffect(scale, anchor: .top)
+            .animation(
+                .spring(
+                    response: 0.45 + Double(index) * 0.025,
+                    dampingFraction: 0.68
+                ),
+                value: stretch
+            )
     }
 }
 
