@@ -25,6 +25,15 @@ struct GroupService {
         let row = GroupRow(userId: userId, group: group)
         try await client.from(table).upsert(row).execute()
     }
+
+    func delete(id: UUID, userId: UUID) async throws {
+        try await client
+            .from(table)
+            .delete()
+            .eq("id", value: id)
+            .eq("user_id", value: userId)
+            .execute()
+    }
 }
 
 private struct GroupRow: Codable {

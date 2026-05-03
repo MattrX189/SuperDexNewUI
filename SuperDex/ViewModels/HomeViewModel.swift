@@ -15,6 +15,8 @@ final class HomeViewModel {
     var showingNewGroupSheet = false
     var selectedGroup: CardGroup?
     var selectedProfile: ProfileCard?
+    var groupBeingEdited: CardGroup?
+    var groupPendingDeletion: CardGroup?
     var isLoading = false
     var errorMessage: String?
 
@@ -85,11 +87,52 @@ final class HomeViewModel {
         showingNewGroupSheet = true
     }
 
+    func updateGroup(
+        id: UUID,
+        name: String,
+        description: String?,
+        eventDate: Date?,
+        wallpaperData: Data?
+    ) {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmedName.isEmpty else { return }
+        guard let idx = groups.firstIndex(where: { $0.id == id }) else { return }
+
+        let trimmedDescription = description?.trimmingCharacters(in: .whitespaces)
+        groups[idx].name = trimmedName
+        groups[idx].descriptionText = (trimmedDescription?.isEmpty == false) ? trimmedDescription : nil
+        groups[idx].eventDate = eventDate
+        groups[idx].wallpaperData = wallpaperData
+
+        if selectedGroup?.id == id { selectedGroup = groups[idx] }
+
+        upsertRemote(groups[idx])
+    }
+
+    func deleteGroup(id: UUID) {
+        guard let idx = groups.firstIndex(where: { $0.id == id }) else { return }
+        let removed = groups.remove(at: idx)
+        if selectedGroup?.id == removed.id { selectedGroup = nil }
+        if groupBeingEdited?.id == removed.id { groupBeingEdited = nil }
+        deleteRemote(removed.id)
+    }
+
     private func upsertRemote(_ group: CardGroup) {
         guard let userId = currentUserId else { return }
         Task { [service] in
             do {
                 try await service.upsert(group, userId: userId)
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func deleteRemote(_ id: UUID) {
+        guard let userId = currentUserId else { return }
+        Task { [service] in
+            do {
+                try await service.delete(id: id, userId: userId)
             } catch {
                 self.errorMessage = error.localizedDescription
             }

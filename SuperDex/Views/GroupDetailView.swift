@@ -8,6 +8,7 @@ import SwiftUI
 struct GroupDetailView: View {
     let group: CardGroup
     @Binding var selectedProfile: ProfileCard?
+    var onEdit: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @State private var isListLayout = false
@@ -22,9 +23,6 @@ struct GroupDetailView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            pageBackground
-                .ignoresSafeArea()
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
                     Color.clear.frame(height: 56)
@@ -50,6 +48,10 @@ struct GroupDetailView: View {
             topBar
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
+        }
+        .background {
+            pageBackground
+                .ignoresSafeArea()
         }
         .navigationBarHidden(true)
     }
@@ -121,14 +123,17 @@ struct GroupDetailView: View {
 
             Spacer()
 
-            ShareLink(item: "Check out \(group.name) on SuperDex") {
-                Image(systemName: "square.and.arrow.up")
+            Button {
+                onEdit()
+            } label: {
+                Image(systemName: "pencil")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 42, height: 42)
                     .contentShape(Circle())
                     .glassEffect(.regular, in: Circle())
             }
+            .buttonStyle(.plain)
         }
     }
 

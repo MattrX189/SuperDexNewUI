@@ -34,12 +34,23 @@ struct HomeView: View {
                             } else {
                                 LazyVStack(spacing: 16) {
                                     ForEach(viewModel.groups) { group in
-                                        GroupCardView(
-                                            group: group,
-                                            onTap: {
-                                                viewModel.selectedGroup = group
+                                        NavigationLink(value: group) {
+                                            GroupCardView(group: group)
+                                        }
+                                        .buttonStyle(GroupCardPressStyle())
+                                        .contextMenu {
+                                            Button {
+                                                viewModel.groupBeingEdited = group
+                                            } label: {
+                                                Label("Edit", systemImage: "pencil")
                                             }
-                                        )
+
+                                            Button(role: .destructive) {
+                                                viewModel.groupPendingDeletion = group
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, 20)
@@ -56,8 +67,12 @@ struct HomeView: View {
             }
             .background(AppBackground())
             .navigationBarHidden(true)
-            .navigationDestination(item: $viewModel.selectedGroup) { group in
-                GroupDetailView(group: group, selectedProfile: $viewModel.selectedProfile)
+            .navigationDestination(for: CardGroup.self) { group in
+                GroupDetailView(
+                    group: group,
+                    selectedProfile: $viewModel.selectedProfile,
+                    onEdit: { viewModel.groupBeingEdited = group }
+                )
             }
             .navigationDestination(item: $viewModel.selectedProfile) { profile in
                 ProfileDetailView(profile: profile)
@@ -72,6 +87,32 @@ struct HomeView: View {
                         members: members
                     )
                 }
+            }
+            .sheet(item: $viewModel.groupBeingEdited) { group in
+                NewGroupView(existingGroup: group) { name, description, date, wallpaperData, _ in
+                    viewModel.updateGroup(
+                        id: group.id,
+                        name: name,
+                        description: description,
+                        eventDate: date,
+                        wallpaperData: wallpaperData
+                    )
+                }
+            }
+            .alert(
+                "Delete Group?",
+                isPresented: Binding(
+                    get: { viewModel.groupPendingDeletion != nil },
+                    set: { if !$0 { viewModel.groupPendingDeletion = nil } }
+                ),
+                presenting: viewModel.groupPendingDeletion
+            ) { group in
+                Button("Delete", role: .destructive) {
+                    viewModel.deleteGroup(id: group.id)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { group in
+                Text("\"\(group.name)\" will be permanently deleted. This cannot be undone.")
             }
         }
     }
@@ -98,15 +139,20 @@ struct HomeView: View {
 
             Spacer()
 
-            Image(userProfile.avatar)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 56, height: 56)
-                .clipShape(Circle())
-                .overlay(
-                    Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1)
-                )
-                .padding(.top, 16)
+            Button {
+                viewModel.selectedProfile = userProfile.asProfileCard
+            } label: {
+                Image(userProfile.avatar)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 56, height: 56)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 16)
         }
     }
 

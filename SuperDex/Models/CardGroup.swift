@@ -16,14 +16,11 @@ struct CardGroup: Identifiable, Codable, Hashable {
     var members: [GroupMember] = []
 
     private static let colorMap: [String: Color] = [
-        "blue": .blue, "purple": .purple, "orange": .orange,
-        "pink": .pink, "teal": .teal, "indigo": .indigo
+        "indigo": .indigo
     ]
     static let colorNames: [String] = Array(colorMap.keys)
     static let icons: [String] = [
-        "folder.fill", "star.fill", "heart.fill", "flag.fill",
-        "bookmark.fill", "tag.fill", "mappin.circle.fill",
-        "airplane", "camera.fill", "gift.fill"
+        "person.2.fill"
     ]
 
     var color: Color {

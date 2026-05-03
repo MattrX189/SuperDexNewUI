@@ -7,39 +7,62 @@ import SwiftUI
 import PhotosUI
 
 struct NewGroupView: View {
+    let existingGroup: CardGroup?
     var initialMembers: [GroupMember] = []
-    var onCreate: (_ name: String, _ description: String?, _ date: Date?, _ wallpaperData: Data?, _ members: [GroupMember]) -> Void
+    var onSave: (_ name: String, _ description: String?, _ date: Date?, _ wallpaperData: Data?, _ members: [GroupMember]) -> Void
+
+    init(
+        existingGroup: CardGroup? = nil,
+        initialMembers: [GroupMember] = [],
+        onSave: @escaping (_ name: String, _ description: String?, _ date: Date?, _ wallpaperData: Data?, _ members: [GroupMember]) -> Void
+    ) {
+        self.existingGroup = existingGroup
+        self.initialMembers = existingGroup?.members ?? initialMembers
+        self.onSave = onSave
+
+        _name = State(initialValue: existingGroup?.name ?? "")
+        _descriptionText = State(initialValue: existingGroup?.descriptionText ?? "")
+        _includeDate = State(initialValue: existingGroup?.eventDate != nil)
+        _date = State(initialValue: existingGroup?.eventDate ?? Date())
+        _wallpaperData = State(initialValue: existingGroup?.wallpaperData)
+        _previewColorName = State(initialValue: existingGroup?.colorName ?? CardGroup.colorNames.randomElement() ?? "blue")
+        _previewIcon = State(initialValue: existingGroup?.icon ?? CardGroup.icons.randomElement() ?? "folder.fill")
+    }
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name: String = ""
-    @State private var descriptionText: String = ""
-    @State private var includeDate: Bool = false
-    @State private var date: Date = Date()
+    @State private var name: String
+    @State private var descriptionText: String
+    @State private var includeDate: Bool
+    @State private var date: Date
     @State private var wallpaperItem: PhotosPickerItem?
     @State private var wallpaperData: Data?
 
-    @State private var previewColorName: String = CardGroup.colorNames.randomElement() ?? "blue"
-    @State private var previewIcon: String = CardGroup.icons.randomElement() ?? "folder.fill"
+    @State private var previewColorName: String
+    @State private var previewIcon: String
 
     @FocusState private var focusedField: Field?
 
     private enum Field { case name, description }
 
+    private var isEditing: Bool { existingGroup != nil }
+
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespaces)
     }
 
-    private var canCreate: Bool { !trimmedName.isEmpty }
+    private var canSave: Bool { !trimmedName.isEmpty }
 
     private var previewGroup: CardGroup {
         CardGroup(
+            id: existingGroup?.id ?? UUID(),
             name: trimmedName.isEmpty ? "Group Name" : trimmedName,
             colorName: previewColorName,
             icon: previewIcon,
             descriptionText: descriptionText.trimmingCharacters(in: .whitespaces).isEmpty ? nil : descriptionText,
             eventDate: includeDate ? date : nil,
-            wallpaperData: wallpaperData
+            wallpaperData: wallpaperData,
+            members: initialMembers
         )
     }
 
@@ -76,7 +99,7 @@ struct NewGroupView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle("New Group")
+            .navigationTitle(isEditing ? "Edit Group" : "New Group")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -84,8 +107,8 @@ struct NewGroupView: View {
                         .foregroundStyle(.white.opacity(0.75))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        onCreate(
+                    Button(isEditing ? "Save" : "Create") {
+                        onSave(
                             trimmedName,
                             descriptionText.trimmingCharacters(in: .whitespaces),
                             includeDate ? date : nil,
@@ -95,8 +118,8 @@ struct NewGroupView: View {
                         dismiss()
                     }
                     .font(.gilroy(.semiBold, size: 15))
-                    .foregroundStyle(canCreate ? .white : .white.opacity(0.3))
-                    .disabled(!canCreate)
+                    .foregroundStyle(canSave ? .white : .white.opacity(0.3))
+                    .disabled(!canSave)
                 }
             }
             .toolbarBackground(.hidden, for: .navigationBar)

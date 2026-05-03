@@ -38,7 +38,8 @@ struct ContactsView: View {
                                     ContactRow(
                                         contact: contact.asProfileCard,
                                         isSelecting: isSelecting,
-                                        isSelected: selectedIds.contains(contact.id)
+                                        isSelected: selectedIds.contains(contact.id),
+                                        isLast: index == contacts.count - 1
                                     )
                                     .matchedTransitionSource(id: contact.id, in: contactNamespace)
                                     .modifier(
@@ -230,26 +231,35 @@ struct ContactRow: View {
     let contact: ProfileCard
     var isSelecting: Bool = false
     var isSelected: Bool = false
+    var isLast: Bool = false
 
     @Environment(\.openURL) private var openURL
 
     private let cornerRadius: CGFloat = 24
+    private let stackOverlap: CGFloat = 40
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             if isSelecting {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-                    .transition(.scale.combined(with: .opacity))
-                    .padding(.top, 6)
+                    .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
+                    .padding(.top, 36)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
+            card
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSelecting)
+    }
+
+    private var card: some View {
+        HStack(alignment: .top, spacing: 14) {
             Image(contact.avatar)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -264,14 +274,14 @@ struct ContactRow: View {
                     .lineLimit(1)
 
                 Text(contact.jobRole.uppercased())
-                    .font(.gilroy(.semiBold, size: 10))
+                    .font(.gilroy(.semiBold, size: 11))
                     .tracking(1.4)
                     .foregroundStyle(.white.opacity(0.88))
                     .lineLimit(1)
 
                 if !contact.bio.isEmpty {
                     Text(contact.bio)
-                        .font(.gilroy(.regular, size: 12))
+                        .font(.gilroy(.regular, size: 11))
                         .foregroundStyle(.white.opacity(0.78))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -283,7 +293,7 @@ struct ContactRow: View {
             Spacer(minLength: 4)
 
             if !isSelecting {
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     circularLink(icon: "phone.fill") {
                         if let url = URL(string: "tel:\(contact.phone.replacingOccurrences(of: " ", with: ""))") {
                             openURL(url)
@@ -299,9 +309,9 @@ struct ContactRow: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.top, 14)
+        .padding(.top, 20)
         .padding(.bottom, 14)
-        .frame(height: 134, alignment: .top)
+        .frame(height: isLast ? 146 - stackOverlap : 134, alignment: .top)
         .background {
             ZStack {
                 metallicBackground
@@ -324,7 +334,6 @@ struct ContactRow: View {
             color: (contact.theme.gradientColors.first ?? .purple).opacity(0.35),
             radius: 18, y: 10
         )
-        .animation(.easeInOut(duration: 0.2), value: isSelecting)
     }
 
     private func circularLink(icon: String, action: @escaping () -> Void) -> some View {

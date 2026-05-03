@@ -18,43 +18,40 @@ struct GroupCardView: View {
     private var memberCount: Int { group.members.count }
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 16) {
-                iconBadge
+        HStack(spacing: 16) {
+            iconBadge
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(group.name.uppercased())
-                        .font(.gilroy(.bold, size: 16))
-                        .tracking(2.0)
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(group.name.uppercased())
+                    .font(.gilroy(.bold, size: 16))
+                    .tracking(2.0)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-                    HStack(spacing: 10) {
-                        avatarStack
+                HStack(spacing: 10) {
+                    avatarStack
 
-                        Text("\(memberCount) members")
-                            .font(.gilroy(.medium, size: 12))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
+                    Text("\(memberCount) members")
+                        .font(.gilroy(.medium, size: 12))
+                        .foregroundStyle(.white.opacity(0.6))
                 }
-
-                Spacer(minLength: 8)
-
-                chevronCapsule
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 18)
-            .frame(maxWidth: .infinity, minHeight: 104)
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay(highlightBorder)
-            .shadow(color: group.color.opacity(0.30), radius: 18, y: 12)
-            .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
-            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+
+            Spacer(minLength: 8)
+
+            chevronCapsule
         }
-        .buttonStyle(GroupCardPressStyle())
-        
+        .padding(.horizontal, 16)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, minHeight: 104)
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(highlightBorder)
+        .shadow(color: group.color.opacity(0.30), radius: 18, y: 12)
+        .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
     // MARK: - Icon
@@ -231,7 +228,7 @@ struct GroupCardView: View {
     }
 }
 
-private struct GroupCardPressStyle: ButtonStyle {
+struct GroupCardPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
