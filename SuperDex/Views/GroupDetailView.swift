@@ -241,54 +241,76 @@ struct GroupDetailView: View {
     // MARK: - Title section
 
     private var titleSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
             Text(group.name)
-                .font(.gilroy(.bold, size: 30))
+                .font(.gilroy(.bold, size: 32))
                 .foregroundStyle(.white)
                 .lineLimit(2)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 8) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(group.color)
-                    Image(systemName: group.icon)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 22, height: 22)
-
-                Text("\(memberCount) members")
-                    .font(.gilroy(.medium, size: 15))
-                    .foregroundStyle(.white.opacity(0.85))
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-
-            if let date = group.eventDate {
-                Text(formattedDate(date))
-                    .font(.gilroy(.medium, size: 14))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-
             if let desc = group.descriptionText, !desc.isEmpty {
-                Text(desc)
-                    .font(.gilroy(.regular, size: 14))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .lineSpacing(2)
-                    .padding(.top, 2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                descriptionCard(desc)
             }
+            metaPills
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func formattedDate(_ date: Date) -> String {
+    private var metaPills: some View {
+        HStack(spacing: 8) {
+            metaPill(
+                icon: "person.2.fill",
+                text: "\(memberCount) \(memberCount == 1 ? "member" : "members")"
+            )
+            if let date = group.eventDate {
+                metaPill(icon: "calendar", text: dateString(date))
+                metaPill(icon: "clock", text: timeString(date))
+            }
+        }
+    }
+
+    private func metaPill(icon: String, text: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(group.color)
+            Text(text)
+                .font(.gilroy(.semiBold, size: 13))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 9)
+        .glassEffect(.regular, in: Capsule())
+    }
+
+    private func descriptionCard(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Description")
+                .font(.gilroy(.semiBold, size: 18))
+                .foregroundStyle(.white.opacity(0.55))
+
+            Text(text)
+                .font(.gilroy(.medium, size: 15))
+                .foregroundStyle(.white.opacity(0.85))
+                .lineSpacing(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func dateString(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, MMM d, h:mm a"
+        formatter.dateFormat = "EEE, MMM d"
+        return formatter.string(from: date)
+    }
+
+    private func timeString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
         return formatter.string(from: date)
     }
 

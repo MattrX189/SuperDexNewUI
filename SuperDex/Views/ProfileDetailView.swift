@@ -27,56 +27,65 @@ struct ProfileDetailView: View {
             backgroundLayer
 
             VStack(spacing: 0) {
+                topBar
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+
                 segmentedTabBar
                     .padding(.horizontal, 20)
-                    .padding(.top, 6)
+                    .padding(.top, 10)
                     .padding(.bottom, 14)
 
-                TabView(selection: $selectedTab) {
-                    profileTabContent
-                        .tag(0)
-
-                    MeetingHistoryView(meetings: profile.meetings)
-                        .tag(1)
+                Group {
+                    if selectedTab == 0 {
+                        profileTabContent
+                    } else {
+                        MeetingHistoryView(meetings: profile.meetings)
+                    }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .preferredColorScheme(.dark)
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.gilroy(.semiBold, size: 15))
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .glassEffect(.clear.interactive(), in: Circle())
-                }
-            }
-
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showSaveToContacts = true
-                } label: {
-                    Image(systemName: "bookmark")
-                        .font(.gilroy(.semiBold, size: 15))
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .glassEffect(.clear.interactive(), in: Circle())
-                }
-                .accessibilityLabel("Save to Contacts")
-            }
-        }
+        .navigationBarHidden(true)
         .sheet(isPresented: $showSaveToContacts) {
             SaveToContactsView(profile: profile) {
                 showSaveToContacts = false
             }
             .ignoresSafeArea()
+        }
+    }
+
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+                    .glassEffect(.regular, in: Circle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Button {
+                showSaveToContacts = true
+            } label: {
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .contentShape(Circle())
+                    .glassEffect(.regular, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Save to Contacts")
         }
     }
 
@@ -115,46 +124,57 @@ struct ProfileDetailView: View {
     // MARK: - Segmented Tab Bar
 
     private var segmentedTabBar: some View {
-        HStack(spacing: 6) {
-            SegmentPill(
-                title: "Profile",
-                icon: "square.grid.2x2.fill",
-                isSelected: selectedTab == 0,
-                accent: accent
-            ) {
-                withAnimation(.easeInOut(duration: 0.22)) { selectedTab = 0 }
-            }
+        HStack(spacing: 0) {
+            tabButton(title: "Profile", icon: "square.grid.2x2.fill", tag: 0)
+            tabButton(title: "Activity", icon: "waveform.path.ecg", tag: 1)
+        }
+        .padding(4)
+        .glassEffect(.regular, in: Capsule())
+    }
 
-            SegmentPill(
-                title: "Activity",
-                icon: "waveform.path.ecg",
-                isSelected: selectedTab == 1,
-                accent: accent
-            ) {
-                withAnimation(.easeInOut(duration: 0.22)) { selectedTab = 1 }
+    private func tabButton(title: String, icon: String, tag: Int) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) { selectedTab = tag }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(title)
+                    .font(.gilroy(.semiBold, size: 14))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .foregroundStyle(selectedTab == tag ? .white : Color.white.opacity(0.5))
+            .background {
+                if selectedTab == tag {
+                    Capsule()
+                        .fill(accent.opacity(0.7))
+                }
             }
         }
-        .padding(5)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.06))
-        )
-        .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: - Profile Tab
 
     private var profileTabContent: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
+            VStack(spacing: 24) {
                 heroCard
                     .padding(.top, 4)
 
+                identitySection
+
                 if !profile.bio.isEmpty {
                     aboutSection
+                }
+
+                if !profile.phone.isEmpty || !profile.email.isEmpty {
+                    contactSection
+                }
+
+                if !profile.allLinkEntries.isEmpty {
+                    linksSection
                 }
 
                 connectionSection
@@ -172,6 +192,24 @@ struct ProfileDetailView: View {
             .aspectRatio(300.0 / 460.0, contentMode: .fit)
             .padding(.horizontal, 24)
             .shadow(color: accent.opacity(0.55), radius: 40, y: 18)
+            .padding(.bottom, 10)
+    }
+
+    // MARK: - Identity (Name + Job Title)
+
+    private var identitySection: some View {
+        VStack(spacing: 6) {
+            Text(profile.name)
+                .font(.gilroy(.bold, size: 28))
+                .foregroundStyle(.white)
+
+            if !profile.jobRole.isEmpty {
+                Text(profile.jobRole)
+                    .font(.gilroy(.semiBold, size: 16))
+                    .foregroundStyle(accent.opacity(0.9))
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - About
@@ -199,15 +237,129 @@ struct ProfileDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
+    }
+
+    // MARK: - Contact
+
+    private var contactSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(title: "Contact", count: nil)
+
+            VStack(spacing: 0) {
+                if !profile.phone.isEmpty {
+                    contactRow(
+                        icon: "phone.fill",
+                        label: "Phone",
+                        value: profile.phone,
+                        action: {
+                            let digits = profile.phone.filter { $0.isNumber || $0 == "+" }
+                            if let url = URL(string: "tel:\(digits)") { openURL(url) }
+                        }
+                    )
+                }
+
+                if !profile.phone.isEmpty && !profile.email.isEmpty {
+                    Divider()
+                        .background(Color.white.opacity(0.08))
+                        .padding(.horizontal, 16)
+                }
+
+                if !profile.email.isEmpty {
+                    contactRow(
+                        icon: "envelope.fill",
+                        label: "Email",
+                        value: profile.email,
+                        action: {
+                            if let url = URL(string: "mailto:\(profile.email)") { openURL(url) }
+                        }
+                    )
+                }
+            }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+    }
+
+    private func contactRow(icon: String, label: String, value: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(accent.opacity(0.18))
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent)
+                }
+                .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.gilroy(.medium, size: 12))
+                        .foregroundStyle(Color.white.opacity(0.5))
+                    Text(value)
+                        .font(.gilroy(.semiBold, size: 15))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.3))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Links
+
+    private var linksSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(title: "Links", count: "\(profile.allLinkEntries.count)")
+
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
+                spacing: 10
+            ) {
+                ForEach(profile.allLinkEntries, id: \.self) { entry in
+                    linkTile(entry)
+                }
+            }
+        }
+    }
+
+    private func linkTile(_ entry: ProfileLinkEntry) -> some View {
+        Button {
+            if let url = entry.url { openURL(url) }
+        } label: {
+            HStack(spacing: 10) {
+                LinkIcon(link: entry.link)
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(entry.label)
+                        .font(.gilroy(.semiBold, size: 13))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(entry.value)
+                        .font(.gilroy(.medium, size: 11))
+                        .foregroundStyle(Color.white.opacity(0.45))
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Connection
@@ -243,12 +395,10 @@ struct ProfileDetailView: View {
     private var emptyConnectionCard: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                Circle()
                     .fill(accent.opacity(0.18))
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(accent.opacity(0.35), lineWidth: 1)
                 Image(systemName: "sparkles")
-                    .font(.gilroy(.semiBold, size: 18))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(accent)
             }
             .frame(width: 44, height: 44)
@@ -265,14 +415,7 @@ struct ProfileDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     // MARK: - Helpers
@@ -315,46 +458,6 @@ struct ProfileDetailView: View {
     }
 }
 
-// MARK: - Segment Pill
-
-private struct SegmentPill: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let accent: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.gilroy(.semiBold, size: 13))
-                Text(title)
-                    .font(.gilroy(.semiBold, size: 14))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 11)
-            .foregroundStyle(isSelected ? .white : Color.white.opacity(0.55))
-            .background(
-                ZStack {
-                    if isSelected {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [accent, accent.opacity(0.75)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .shadow(color: accent.opacity(0.55), radius: 12, y: 4)
-                    }
-                }
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Stat Pill
 
 private struct StatPill: View {
@@ -377,14 +480,7 @@ private struct StatPill: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
